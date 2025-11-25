@@ -1,0 +1,56 @@
+{
+  "programs": [
+    {
+      "id": "program-1",
+      "name": "14-дневный стартап-спринт",
+      "description": "Практический интенсив: каждый день новое задание, чтобы подвести вас к запуску MVP и первым продажам.",
+      "isActive": true,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "lesson-free-1",
+      "programId": "program-1",
+      "orderIndex": 1,
+      "title": "Фокус и цель спринта",
+      "description": "Определяем целевую аудиторию и ожидаемый итог. <a href=\"https://t.me/startups\">Материалы</a>",
+      "videoUrl": "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      "homeworkText": "Опиши клиента и результат спринта: 3–4 предложения.",
+      "visibility": "FREE",
+      "delayHoursFromPrevious": 0,
+      "expiresInHours": 48,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "lesson-paid-2",
+      "programId": "program-1",
+      "orderIndex": 2,
+      "title": "Гипотеза ценности",
+      "description": "Разбираем, за что пользователи готовы платить и как сформулировать обещание продукта.",
+      "videoUrl": "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      "homeworkText": "Сформулируй ценностное предложение и выгрузку для лендинга.",
+      "visibility": "PAID",
+      "delayHoursFromPrevious": 12,
+      "expiresInHours": 48,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "users": [],
+  "userProgramProgress": [],
+  "userLessonProgress": [],
+  "upsell": {
+    "id": "upsell-default",
+    "title": "Открой полный доступ",
+    "text": "Запишись в платный канал и получи все 14 уроков, созвоны и поддержку наставника.",
+    "buttonLabel": "Перейти к оплате",
+    "buttonUrl": "https://t.me/yourcourse",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  "adminSessions": []
+}
+
+

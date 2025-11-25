@@ -1,0 +1,299 @@
+:root {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #121518;
+  background-color: #f4f5f7;
+  font-size: 16px;
+  line-height: 1.4;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f0f4ff 0%, #fdfdfd 50%);
+  color: #1a1a1a;
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 35px rgba(18, 21, 24, 0.08);
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.25rem;
+}
+
+.button {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button.secondary {
+  background: #eef2ff;
+  color: #1e1b4b;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+}
+
+.button.outline {
+  background: transparent;
+  color: #1e1b4b;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 35px rgba(67, 56, 202, 0.25);
+}
+
+.progress-bar {
+  background: #e5e7eb;
+  border-radius: 999px;
+  height: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lesson-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lesson-card__title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.lesson-card__meta {
+  font-size: 0.9rem;
+  color: #6b7280;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge.free {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+}
+
+.badge.paid {
+  background: rgba(249, 115, 22, 0.15);
+  color: #c2410c;
+}
+
+.lesson-card.locked {
+  opacity: 0.7;
+}
+
+.lesson-card.done {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: #f0fdf4;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.error-banner {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  font-size: 0.95rem;
+}
+
+.timer {
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.admin-layout {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.admin-nav button {
+  flex: 1;
+  min-width: 140px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+}
+
+.input-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.list-table th,
+.list-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.list-table th {
+  font-weight: 600;
+  color: #475569;
+}
+
+.tag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(52, 211, 153, 0.15);
+  color: #047857;
+}
+
+.status-pill.locked {
+  background: rgba(148, 163, 184, 0.2);
+  color: #475569;
+}
+
+.status-pill.expired {
+  background: rgba(248, 113, 113, 0.2);
+  color: #b91c1c;
+}
+
+.status-pill.paid {
+  background: rgba(249, 115, 22, 0.2);
+  color: #c2410c;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-actions button {
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .app-shell {
+    padding-top: 48px;
+  }
+  .card {
+    padding: 24px;
+  }
+  .lesson-list {
+    gap: 16px;
+  }
+}

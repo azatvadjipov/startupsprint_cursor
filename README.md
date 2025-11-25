@@ -98,6 +98,9 @@ npm run start  # запуск production-сборки (Express раздаёт /f
 
 ## Деплой на Vercel
 
+> ℹ️ В корне репозитория лежит `vercel.json`, поэтому Vercel больше не ищет дефолтную папку `public`.  
+> Сборка запускает `npm run build`, а готовый фронтенд берётся из `frontend/dist`. Если проект в Vercel был создан раньше, убедитесь, что в Settings → Build & Output `Output Directory` пуст или совпадает с `frontend/dist`.
+
 Есть два варианта:
 
 1. **Единый Node-сервер (рекомендуется для простоты)**  

@@ -9,6 +9,7 @@ import {
   destroyAdminSession,
 } from "../middleware/adminAuth.js";
 import { computeStats } from "../services/programService.js";
+import { respondWithError } from "../utils/respondWithError.js";
 
 const router = Router();
 const now = () => new Date().toISOString();
@@ -16,15 +17,12 @@ const secureCookie = process.env.NODE_ENV === "production";
 
 type AsyncHandler = (req: Request, res: Response) => Promise<void | Response>;
 const handle =
-  (fn: AsyncHandler) =>
-  async (req: Request, res: Response, _next?: any) => {
+  (context: string, fn: AsyncHandler) =>
+  async (req: Request, res: Response) => {
     try {
       await fn(req, res);
     } catch (error) {
-      console.error(error);
-      res
-        .status(400)
-        .json({ message: (error as Error).message ?? "Ошибка обработки запроса" });
+      return respondWithError(res, error, "Ошибка обработки запроса", 400, context);
     }
   };
 
@@ -54,7 +52,7 @@ router.use(requireAdmin);
 
 router.post(
   "/logout",
-  handle(async (req, res) => {
+  handle("admin:logout", async (req, res) => {
     const token = req.cookies?.[getAdminCookieName()];
     if (token) {
       await destroyAdminSession(token);
@@ -64,198 +62,231 @@ router.post(
   })
 );
 
-router.get("/programs", handle(async (_req, res) => {
-  const data = await db.read();
-  const programs = data.programs.map((program) => {
-    const lessonsCount = data.lessons.filter((lesson) => lesson.programId === program.id).length;
-    return { ...program, lessonsCount };
-  });
-  return res.json(programs);
-}));
-
-router.post("/programs", handle(async (req, res) => {
-  const { name, description, isActive } = req.body as {
-    name?: string;
-    description?: string;
-    isActive?: boolean;
-  };
-  if (!name) {
-    return res.status(400).json({ message: "Название обязательно" });
-  }
-  await db.mutate((data) => {
-    if (isActive) {
-      data.programs.forEach((program) => {
-        program.isActive = false;
-      });
-    }
-    data.programs.push({
-      id: uuid(),
-      name,
-      description: description ?? "",
-      isActive: Boolean(isActive),
-      createdAt: now(),
-      updatedAt: now(),
+router.get(
+  "/programs",
+  handle("admin:get-programs", async (_req, res) => {
+    const data = await db.read();
+    const programs = data.programs.map((program) => {
+      const lessonsCount = data.lessons.filter((lesson) => lesson.programId === program.id).length;
+      return { ...program, lessonsCount };
     });
-  });
-  return res.json({ message: "Программа создана" });
-}));
+    return res.json(programs);
+  })
+);
 
-router.put("/programs/:id", handle(async (req, res) => {
-  const { id } = req.params;
-  const { name, description, isActive } = req.body as {
-    name?: string;
-    description?: string;
-    isActive?: boolean;
-  };
-  await db.mutate((data) => {
-    const target = data.programs.find((program) => program.id === id);
-    if (!target) {
-      throw new Error("Программа не найдена");
+router.post(
+  "/programs",
+  handle("admin:create-program", async (req, res) => {
+    const { name, description, isActive } = req.body as {
+      name?: string;
+      description?: string;
+      isActive?: boolean;
+    };
+    if (!name) {
+      return res.status(400).json({ message: "Название обязательно" });
     }
-    if (typeof name === "string") target.name = name;
-    if (typeof description === "string") target.description = description;
-    if (typeof isActive === "boolean") {
+    await db.mutate((data) => {
       if (isActive) {
         data.programs.forEach((program) => {
           program.isActive = false;
         });
       }
-      target.isActive = isActive;
-    }
-    target.updatedAt = now();
-  });
-  return res.json({ message: "Программа обновлена" });
-}));
+      data.programs.push({
+        id: uuid(),
+        name,
+        description: description ?? "",
+        isActive: Boolean(isActive),
+        createdAt: now(),
+        updatedAt: now(),
+      });
+    });
+    return res.json({ message: "Программа создана" });
+  })
+);
 
-router.get("/programs/:id/lessons", handle(async (req, res) => {
-  const { id } = req.params;
-  const data = await db.read();
-  const lessons = data.lessons
-    .filter((lesson) => lesson.programId === id)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
-  return res.json(lessons);
-}));
+router.put(
+  "/programs/:id",
+  handle("admin:update-program", async (req, res) => {
+    const { id } = req.params;
+    const { name, description, isActive } = req.body as {
+      name?: string;
+      description?: string;
+      isActive?: boolean;
+    };
+    await db.mutate((data) => {
+      const target = data.programs.find((program) => program.id === id);
+      if (!target) {
+        throw new Error("Программа не найдена");
+      }
+      if (typeof name === "string") target.name = name;
+      if (typeof description === "string") target.description = description;
+      if (typeof isActive === "boolean") {
+        if (isActive) {
+          data.programs.forEach((program) => {
+            program.isActive = false;
+          });
+        }
+        target.isActive = isActive;
+      }
+      target.updatedAt = now();
+    });
+    return res.json({ message: "Программа обновлена" });
+  })
+);
 
-router.post("/programs/:id/lessons", handle(async (req, res) => {
-  const { id } = req.params;
-  const {
-    title,
-    description,
-    videoUrl,
-    homeworkText,
-    visibility,
-    delayHoursFromPrevious = 0,
-    expiresInHours = 48,
-  } = req.body as Record<string, any>;
-
-  if (!title) {
-    return res.status(400).json({ message: "Название урока обязательно" });
-  }
-
-  await db.mutate((data) => {
-    const program = data.programs.find((program) => program.id === id);
-    if (!program) {
-      throw new Error("Программа не найдена");
-    }
-    const siblings = data.lessons
+router.get(
+  "/programs/:id/lessons",
+  handle("admin:list-lessons", async (req, res) => {
+    const { id } = req.params;
+    const data = await db.read();
+    const lessons = data.lessons
       .filter((lesson) => lesson.programId === id)
       .sort((a, b) => a.orderIndex - b.orderIndex);
-    const orderIndex = siblings.length ? siblings[siblings.length - 1].orderIndex + 1 : 1;
-    data.lessons.push({
-      id: uuid(),
-      programId: id,
-      orderIndex,
+    return res.json(lessons);
+  })
+);
+
+router.post(
+  "/programs/:id/lessons",
+  handle("admin:create-lesson", async (req, res) => {
+    const { id } = req.params;
+    const {
       title,
-      description: description ?? "",
-      videoUrl: videoUrl ?? "",
-      homeworkText: homeworkText ?? "",
-      visibility: visibility ?? "FREE",
-      delayHoursFromPrevious: Number(delayHoursFromPrevious) || 0,
-      expiresInHours: Number(expiresInHours) || 48,
-      createdAt: now(),
-      updatedAt: now(),
+      description,
+      videoUrl,
+      homeworkText,
+      visibility,
+      delayHoursFromPrevious = 0,
+      expiresInHours = 48,
+    } = req.body as Record<string, any>;
+
+    if (!title) {
+      return res.status(400).json({ message: "Название урока обязательно" });
+    }
+
+    await db.mutate((data) => {
+      const program = data.programs.find((program) => program.id === id);
+      if (!program) {
+        throw new Error("Программа не найдена");
+      }
+      const siblings = data.lessons
+        .filter((lesson) => lesson.programId === id)
+        .sort((a, b) => a.orderIndex - b.orderIndex);
+      const orderIndex = siblings.length ? siblings[siblings.length - 1].orderIndex + 1 : 1;
+      data.lessons.push({
+        id: uuid(),
+        programId: id,
+        orderIndex,
+        title,
+        description: description ?? "",
+        videoUrl: videoUrl ?? "",
+        homeworkText: homeworkText ?? "",
+        visibility: visibility ?? "FREE",
+        delayHoursFromPrevious: Number(delayHoursFromPrevious) || 0,
+        expiresInHours: Number(expiresInHours) || 48,
+        createdAt: now(),
+        updatedAt: now(),
+      });
     });
-  });
-  return res.json({ message: "Урок создан" });
-}));
+    return res.json({ message: "Урок создан" });
+  })
+);
 
-router.put("/lessons/:id", handle(async (req, res) => {
-  const { id } = req.params;
-  await db.mutate((data) => {
-    const lesson = data.lessons.find((item) => item.id === id);
-    if (!lesson) {
-      throw new Error("Урок не найден");
+router.put(
+  "/lessons/:id",
+  handle("admin:update-lesson", async (req, res) => {
+    const { id } = req.params;
+    await db.mutate((data) => {
+      const lesson = data.lessons.find((item) => item.id === id);
+      if (!lesson) {
+        throw new Error("Урок не найден");
+      }
+      Object.assign(lesson, req.body);
+      lesson.delayHoursFromPrevious = Number(lesson.delayHoursFromPrevious) || 0;
+      lesson.expiresInHours = Number(lesson.expiresInHours) || 48;
+      lesson.updatedAt = now();
+    });
+    return res.json({ message: "Урок обновлён" });
+  })
+);
+
+router.delete(
+  "/lessons/:id",
+  handle("admin:delete-lesson", async (req, res) => {
+    const { id } = req.params;
+    await db.mutate((data) => {
+      data.lessons = data.lessons.filter((lesson) => lesson.id !== id);
+      data.userLessonProgress = data.userLessonProgress.filter(
+        (progress) => progress.lessonId !== id
+      );
+    });
+    return res.json({ message: "Урок удалён" });
+  })
+);
+
+router.post(
+  "/lessons/:id/move",
+  handle("admin:move-lesson", async (req, res) => {
+    const { id } = req.params;
+    const { direction } = req.body as { direction: "up" | "down" };
+    if (!direction) {
+      return res.status(400).json({ message: "Не указано направление" });
     }
-    Object.assign(lesson, req.body);
-    lesson.delayHoursFromPrevious = Number(lesson.delayHoursFromPrevious) || 0;
-    lesson.expiresInHours = Number(lesson.expiresInHours) || 48;
-    lesson.updatedAt = now();
-  });
-  return res.json({ message: "Урок обновлён" });
-}));
+    await db.mutate((data) => {
+      const lesson = data.lessons.find((item) => item.id === id);
+      if (!lesson) {
+        throw new Error("Урок не найден");
+      }
+      const siblings = data.lessons
+        .filter((item) => item.programId === lesson.programId)
+        .sort((a, b) => a.orderIndex - b.orderIndex);
+      const index = siblings.findIndex((item) => item.id === lesson.id);
+      const swapIndex = direction === "up" ? index - 1 : index + 1;
+      if (swapIndex < 0 || swapIndex >= siblings.length) {
+        return;
+      }
+      const target = siblings[swapIndex];
+      const tmp = lesson.orderIndex;
+      lesson.orderIndex = target.orderIndex;
+      target.orderIndex = tmp;
+    });
+    return res.json({ message: "Порядок обновлён" });
+  })
+);
 
-router.delete("/lessons/:id", handle(async (req, res) => {
-  const { id } = req.params;
-  await db.mutate((data) => {
-    data.lessons = data.lessons.filter((lesson) => lesson.id !== id);
-    data.userLessonProgress = data.userLessonProgress.filter(
-      (progress) => progress.lessonId !== id
-    );
-  });
-  return res.json({ message: "Урок удалён" });
-}));
+router.get(
+  "/upsell",
+  handle("admin:get-upsell", async (_req, res) => {
+    const data = await db.read();
+    return res.json(data.upsell);
+  })
+);
 
-router.post("/lessons/:id/move", handle(async (req, res) => {
-  const { id } = req.params;
-  const { direction } = req.body as { direction: "up" | "down" };
-  if (!direction) {
-    return res.status(400).json({ message: "Не указано направление" });
-  }
-  await db.mutate((data) => {
-    const lesson = data.lessons.find((item) => item.id === id);
-    if (!lesson) {
-      throw new Error("Урок не найден");
-    }
-    const siblings = data.lessons
-      .filter((item) => item.programId === lesson.programId)
-      .sort((a, b) => a.orderIndex - b.orderIndex);
-    const index = siblings.findIndex((item) => item.id === lesson.id);
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= siblings.length) {
-      return;
-    }
-    const target = siblings[swapIndex];
-    const tmp = lesson.orderIndex;
-    lesson.orderIndex = target.orderIndex;
-    target.orderIndex = tmp;
-  });
-  return res.json({ message: "Порядок обновлён" });
-}));
+router.put(
+  "/upsell",
+  handle("admin:update-upsell", async (req, res) => {
+    const { title, text, buttonLabel, buttonUrl } = req.body as Record<string, string>;
+    await db.mutate((data) => {
+      data.upsell = {
+        id: data.upsell?.id ?? uuid(),
+        title: title ?? data.upsell?.title ?? "",
+        text: text ?? data.upsell?.text ?? "",
+        buttonLabel: buttonLabel ?? data.upsell?.buttonLabel ?? "",
+        buttonUrl: buttonUrl ?? data.upsell?.buttonUrl ?? "",
+        updatedAt: now(),
+      };
+    });
+    return res.json({ message: "Апселл сохранён" });
+  })
+);
 
-router.get("/upsell", handle(async (_req, res) => {
-  const data = await db.read();
-  return res.json(data.upsell);
-}));
-
-router.put("/upsell", handle(async (req, res) => {
-  const { title, text, buttonLabel, buttonUrl } = req.body as Record<string, string>;
-  await db.mutate((data) => {
-    data.upsell = {
-      id: data.upsell?.id ?? uuid(),
-      title: title ?? data.upsell?.title ?? "",
-      text: text ?? data.upsell?.text ?? "",
-      buttonLabel: buttonLabel ?? data.upsell?.buttonLabel ?? "",
-      buttonUrl: buttonUrl ?? data.upsell?.buttonUrl ?? "",
-      updatedAt: now(),
-    };
-  });
-  return res.json({ message: "Апселл сохранён" });
-}));
-
-router.get("/stats", handle(async (_req, res) => {
-  const stats = await computeStats();
-  return res.json(stats);
-}));
+router.get(
+  "/stats",
+  handle("admin:get-stats", async (_req, res) => {
+    const stats = await computeStats();
+    return res.json(stats);
+  })
+);
 
 export default router;
 

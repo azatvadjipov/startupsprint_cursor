@@ -12,16 +12,17 @@ import {
 import { db } from "../db.js";
 import { checkTelegramMembership } from "../telegram.js";
 import { Lesson } from "../types.js";
+import { createHttpError, respondWithError } from "../utils/respondWithError.js";
 
 const router = Router();
 
 const ensureUser = async (userId?: string) => {
   if (!userId) {
-    throw new Error("userId обязателен");
+    throw createHttpError(400, "userId обязателен");
   }
   const user = await findUserById(userId);
   if (!user) {
-    throw new Error("Пользователь не найден");
+    throw createHttpError(404, "Пользователь не найден");
   }
   return user;
 };
@@ -30,7 +31,7 @@ const loadLesson = async (lessonId: string) => {
   const data = await db.read();
   const lesson = data.lessons.find((l) => l.id === lessonId);
   if (!lesson || lesson.visibility === "ARCHIVED") {
-    throw new Error("Урок не найден или архивирован");
+    throw createHttpError(404, "Урок не найден или архивирован");
   }
   return lesson;
 };
@@ -41,13 +42,11 @@ const ensurePaidLessonAccess = async (
   preloadedLesson?: Lesson
 ) => {
   if (!userId) {
-    const error = new Error("userId обязателен");
-    (error as any).status = 400;
-    throw error;
+    throw createHttpError(400, "userId обязателен");
   }
   const user = await findUserById(userId);
   if (!user) {
-    throw new Error("Пользователь не найден");
+    throw createHttpError(404, "Пользователь не найден");
   }
   const lesson = preloadedLesson ?? (await loadLesson(lessonId));
   if (lesson.visibility !== "PAID") {
@@ -59,9 +58,7 @@ const ensurePaidLessonAccess = async (
     user.isPaid = false;
     const reason =
       membership.reason ?? "Нужно вступить в платный канал, чтобы открыть урок.";
-    const error = new Error(reason);
-    (error as any).status = 403;
-    throw error;
+    throw createHttpError(403, reason);
   }
   if (!user.isPaid) {
     await updateUserPaidStatus(user.id, true);
@@ -87,8 +84,7 @@ router.post("/auth/telegram", async (req, res) => {
       ...payload,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Ошибка авторизации" });
+    return respondWithError(res, error, "Ошибка авторизации", 500, "public:auth");
   }
 });
 
@@ -110,8 +106,13 @@ router.get("/check-membership", async (req, res) => {
       membershipReason: membership.reason,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Не удалось проверить подписку" });
+    return respondWithError(
+      res,
+      error,
+      "Не удалось проверить подписку",
+      500,
+      "public:check-membership"
+    );
   }
 });
 
@@ -122,10 +123,13 @@ router.get("/programs/active", async (req, res) => {
     const payload = await buildProgramPayload(user.id, user.isPaid);
     return res.json({ userId: user.id, isPaid: user.isPaid, ...payload });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(400)
-      .json({ message: (error as Error).message ?? "Ошибка получения программы" });
+    return respondWithError(
+      res,
+      error,
+      "Ошибка получения программы",
+      400,
+      "public:get-program"
+    );
   }
 });
 
@@ -136,10 +140,13 @@ router.get("/progress", async (req, res) => {
     const payload = await buildProgramPayload(user.id, user.isPaid);
     return res.json({ userId: user.id, isPaid: user.isPaid, ...payload });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(400)
-      .json({ message: (error as Error).message ?? "Ошибка получения прогресса" });
+    return respondWithError(
+      res,
+      error,
+      "Ошибка получения прогресса",
+      400,
+      "public:get-progress"
+    );
   }
 });
 
@@ -156,9 +163,13 @@ router.post("/lessons/:lessonId/start", async (req, res) => {
     const payload = await buildProgramPayload(user.id, user.isPaid);
     return res.json({ userId: user.id, isPaid: user.isPaid, ...payload });
   } catch (error) {
-    console.error(error);
-    const status = (error as any).status ?? 400;
-    return res.status(status).json({ message: (error as Error).message });
+    return respondWithError(
+      res,
+      error,
+      "Не удалось начать урок",
+      400,
+      "public:start-lesson"
+    );
   }
 });
 
@@ -172,9 +183,13 @@ router.post("/lessons/:lessonId/complete", async (req, res) => {
     const payload = await buildProgramPayload(user.id, user.isPaid);
     return res.json({ userId: user.id, isPaid: user.isPaid, ...payload });
   } catch (error) {
-    console.error(error);
-    const status = (error as any).status ?? 400;
-    return res.status(status).json({ message: (error as Error).message });
+    return respondWithError(
+      res,
+      error,
+      "Не удалось завершить урок",
+      400,
+      "public:complete-lesson"
+    );
   }
 });
 
@@ -190,10 +205,13 @@ router.post("/restart-program", async (req, res) => {
     const payload = await buildProgramPayload(user.id, user.isPaid);
     return res.json({ userId: user.id, isPaid: user.isPaid, ...payload });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(400)
-      .json({ message: (error as Error).message ?? "Не удалось перезапустить спринт" });
+    return respondWithError(
+      res,
+      error,
+      "Не удалось перезапустить спринт",
+      400,
+      "public:restart-program"
+    );
   }
 });
 

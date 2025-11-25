@@ -1,8 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppClientApi } from "../api/appClient";
+import { HttpError } from "../api/http";
 import { getTelegramUserId } from "../lib/telegram";
 import { formatCountdown, formatDateTime, timeUntil } from "../utils/time";
 import type { AuthResponse, Lesson, ProgramPayload } from "../types";
+
+const formatErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof HttpError) {
+    return `${error.message} (код ${error.status})`;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const logAndFormatError = (scope: string, error: unknown, fallback: string) => {
+  const message = formatErrorMessage(error, fallback);
+  console.error(`[client] ${scope}`, error);
+  return message;
+};
 
 type UiState =
   | { status: "loading" }
@@ -37,9 +54,10 @@ const ClientAppPage = () => {
       const payload = await AppClientApi.auth(telegramId);
       setState({ status: "ready", data: payload });
     } catch (error) {
+      const message = logAndFormatError("fetchInitialData", error, "Не удалось загрузить данные");
       setState({
         status: "error",
-        message: (error as Error).message ?? "Не удалось загрузить данные",
+        message,
       });
     }
   };
@@ -76,7 +94,12 @@ const ClientAppPage = () => {
           return;
         }
       } catch (error) {
-        setBanner((error as Error).message);
+        const message = logAndFormatError(
+          "checkMembership",
+          error,
+          "Не удалось проверить подписку"
+        );
+        setBanner(message);
         return;
       }
     }
@@ -86,7 +109,8 @@ const ClientAppPage = () => {
         const payload = await AppClientApi.startLesson(state.data.userId, lesson.id);
         applyPayload(payload);
       } catch (error) {
-        setBanner((error as Error).message);
+        const message = logAndFormatError("startLesson", error, "Не удалось открыть урок");
+        setBanner(message);
       }
     }
   };
@@ -98,7 +122,8 @@ const ClientAppPage = () => {
       applyPayload(payload);
       setBanner("Отлично! Урок отмечен как пройден ✅");
     } catch (error) {
-      setBanner((error as Error).message);
+      const message = logAndFormatError("completeLesson", error, "Не удалось завершить урок");
+      setBanner(message);
     }
   };
 
@@ -111,7 +136,8 @@ const ClientAppPage = () => {
       setShowLessonsAfterComplete(false);
       setBanner("Спринт запущен заново");
     } catch (error) {
-      setBanner((error as Error).message);
+      const message = logAndFormatError("restartProgram", error, "Не удалось перезапустить спринт");
+      setBanner(message);
     }
   };
 
@@ -121,7 +147,8 @@ const ClientAppPage = () => {
       const payload = await AppClientApi.getProgress(state.data.userId);
       applyPayload(payload);
     } catch (error) {
-      setBanner((error as Error).message);
+      const message = logAndFormatError("refreshProgress", error, "Не удалось обновить прогресс");
+      setBanner(message);
     }
   };
 

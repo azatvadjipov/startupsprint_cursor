@@ -1,5 +1,5 @@
 import serverless from "serverless-http";
-import { createApp } from "../backend/src/app.js";
+import { createApp } from "../backend/dist/app.js";
 
 const app = createApp();
 

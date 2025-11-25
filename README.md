@@ -48,6 +48,7 @@ npm run dev                    # параллельный запуск backend +
 | `ADMIN_JWT_SECRET` | секрет для подписания админ-сессий (по умолчанию `startupsprint-secret`) |
 | `PORT` | порт Express (по умолчанию `4000`) |
 | `CLIENT_ORIGIN` | список origin'ов фронтенда через запятую. Например `http://localhost:5173,https://startupsprint.vercel.app`. На Vercel дополнительные системные домены добавятся автоматически. |
+| `DATA_DIR` | (опционально) путь до папки для файловой БД. На Vercel укажите `/tmp/startupsprint-data`, иначе Lambda не сможет писать файлы. |
 
 ### Frontend (Vite)
 

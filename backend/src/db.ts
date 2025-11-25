@@ -10,7 +10,17 @@ import {
   Visibility,
 } from "./types.js";
 
-const DATA_DIR = path.resolve(process.cwd(), "data");
+const resolveDataDir = () => {
+  if (process.env.DATA_DIR) {
+    return path.resolve(process.env.DATA_DIR);
+  }
+  if (process.env.VERCEL) {
+    return path.resolve("/tmp", "startupsprint-data");
+  }
+  return path.resolve(process.cwd(), "data");
+};
+
+const DATA_DIR = resolveDataDir();
 const DATA_FILE = path.join(DATA_DIR, "db.json");
 
 const now = () => new Date().toISOString();

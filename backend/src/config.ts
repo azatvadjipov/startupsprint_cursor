@@ -1,8 +1,19 @@
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
-const rootEnvPath = path.resolve(process.cwd(), "../.env");
-dotenv.config({ path: rootEnvPath });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const envCandidates = [
+  path.resolve(__dirname, "../../.env"), // монорепозитарий корень
+  path.resolve(__dirname, "../.env"), // /backend/.env
+  path.resolve(process.cwd(), ".env"), // рабочая директория
+];
+
+for (const envPath of envCandidates) {
+  dotenv.config({ path: envPath });
+}
 dotenv.config();
 
 const required = ["ADMIN_PASSWORD"] as const;

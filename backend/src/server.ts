@@ -8,6 +8,7 @@ import publicRoutes from "./routes/public.js";
 import adminRoutes from "./routes/admin.js";
 import { config } from "./config.js";
 import { requestLogger } from "./middleware/requestLogger.js";
+import { runHealthCheck } from "./services/healthCheck.js";
 
 const app = express();
 
@@ -49,8 +50,15 @@ app.options("*", cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/api/health", async (_req, res) => {
+  try {
+    const report = await runHealthCheck();
+    const statusCode = report.status === "ok" ? 200 : 500;
+    res.status(statusCode).json(report);
+  } catch (error) {
+    console.error("[health] failed to build report", error);
+    res.status(500).json({ status: "error", message: "health check failed" });
+  }
 });
 
 app.use("/api", publicRoutes);

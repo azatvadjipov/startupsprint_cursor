@@ -23,6 +23,11 @@ const resolveDataDir = () => {
 const DATA_DIR = resolveDataDir();
 const DATA_FILE = path.join(DATA_DIR, "db.json");
 
+export const dataPaths = {
+  dir: DATA_DIR,
+  file: DATA_FILE,
+};
+
 const now = () => new Date().toISOString();
 
 const seedProgram = (): { program: Program; lessons: Lesson[] } => {

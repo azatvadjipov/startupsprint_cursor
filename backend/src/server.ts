@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -11,18 +11,41 @@ import { requestLogger } from "./middleware/requestLogger.js";
 
 const app = express();
 
-const originConfig =
+const runtimeOrigins = [
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : null,
+].filter(Boolean) as string[];
+
+const configuredOrigins =
   config.clientOrigin === "*"
-    ? true
-    : config.clientOrigin.split(",").map((item) => item.trim());
+    ? ["*"]
+    : config.clientOrigin
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...configuredOrigins, ...runtimeOrigins]));
+const allowAllOrigins = allowedOrigins.includes("*");
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowAllOrigins || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.warn(`[cors] blocked origin ${origin}`);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
 
 app.use(requestLogger);
-app.use(
-  cors({
-    origin: originConfig,
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 

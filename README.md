@@ -47,7 +47,7 @@ npm run dev                    # параллельный запуск backend +
 | `ADMIN_PASSWORD` | пароль входа в админку |
 | `ADMIN_JWT_SECRET` | секрет для подписания админ-сессий (по умолчанию `startupsprint-secret`) |
 | `PORT` | порт Express (по умолчанию `4000`) |
-| `CLIENT_ORIGIN` | origin фронтенда. Для dev — `http://localhost:5173`, для прод — домен WebApp |
+| `CLIENT_ORIGIN` | список origin'ов фронтенда через запятую. Например `http://localhost:5173,https://startupsprint.vercel.app`. На Vercel дополнительные системные домены добавятся автоматически. |
 
 ### Frontend (Vite)
 
